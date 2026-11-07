@@ -3,6 +3,7 @@ import tempfile
 import subprocess
 import sys
 import os
+from unittest.mock import patch
 from pathlib import Path
 
 from npu import (
@@ -34,6 +35,10 @@ class MacTests(unittest.TestCase):
     def test_mac_rejects_different_matrix_sizes(self):
         with self.assertRaises(ValueError):
             mac_2d([[1.0]], [[1.0, 2.0]])
+
+    def test_mac_rejects_ragged_matrices(self):
+        with self.assertRaises(ValueError):
+            mac_2d([[1.0], [2.0, 3.0]], [[1.0], [2.0, 3.0]])
 
     def test_higher_score_wins_and_tiny_difference_is_undecided(self):
         self.assertEqual(classify_scores(5.0, 1.0), "A")
@@ -133,6 +138,64 @@ class JsonAnalysisTests(unittest.TestCase):
         self.assertEqual(report.failed, 3)
         self.assertEqual([failure.case_id for failure in report.failures], ["bad-key", "size_3_3", "size_5_1"])
         self.assertTrue(all(failure.reason for failure in report.failures))
+
+    def test_non_finite_score_is_a_case_failure_and_later_case_still_runs(self):
+        data = {
+            "filters": {
+                "size_3": {
+                    "cross": [[1e308, 0.0, 0.0]] * 3,
+                    "x": [[1e308, 0.0, 0.0]] * 3,
+                }
+            },
+            "patterns": {
+                "size_3_1": {"input": [[1e308, 0.0, 0.0]] * 3, "expected": "x"},
+                "size_3_2": {"input": [[0.0, 1.0, 0.0]] * 3, "expected": "x"},
+            },
+        }
+
+        report = analyze_data(data)
+
+        self.assertEqual(report.total, 2)
+        self.assertEqual(report.failures[0].case_id, "size_3_1")
+        self.assertIn("유한", report.failures[0].reason)
+        self.assertEqual(report.cases[1].case_id, "size_3_2")
+
+    def test_huge_json_integer_is_a_case_failure_and_later_case_still_runs(self):
+        huge = 10**400
+        data = {
+            "filters": {
+                "size_3": {
+                    "cross": [[huge, 0.0, 0.0]] * 3,
+                    "x": [[0.0, 1.0, 0.0]] * 3,
+                }
+            },
+            "patterns": {
+                "size_3_1": {"input": [[1.0, 0.0, 0.0]] * 3, "expected": "+"},
+                "size_3_2": {"input": [[0.0, 1.0, 0.0]] * 3, "expected": "x"},
+            },
+        }
+
+        report = analyze_data(data)
+
+        self.assertEqual(report.total, 2)
+        self.assertEqual(report.failures[0].case_id, "size_3_1")
+        self.assertEqual(report.cases[1].case_id, "size_3_2")
+
+    def test_malformed_pattern_key_is_a_case_failure_and_later_case_still_runs(self):
+        matrix = [[1.0, 0.0, 0.0]] * 3
+        data = {
+            "filters": {"size_3": {"cross": matrix, "x": matrix}},
+            "patterns": {
+                "size_3_1\n": {"input": matrix, "expected": "+"},
+                "size_3_2": {"input": matrix, "expected": "+"},
+            },
+        }
+
+        report = analyze_data(data)
+
+        self.assertEqual(report.failures[0].case_id, "size_3_1\n")
+        self.assertIn("키", report.failures[0].reason)
+        self.assertEqual(report.cases[1].case_id, "size_3_2")
 
     def test_load_data_rejects_invalid_json_file(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
@@ -242,6 +305,27 @@ class UserModeTests(unittest.TestCase):
         )
 
         self.assertNotEqual(result.returncode, 0)
+
+    def test_user_mode_times_entered_filters_and_routes_bonus_output_to_callback(self):
+        answers = iter(
+            [
+                "0 1 0", "1 1 1", "0 1 0",
+                "1 0 1", "0 1 0", "1 0 1",
+                "1 0 1", "0 1 0", "1 0 1",
+            ]
+        )
+        messages = []
+
+        with patch("main._average_mac_time_2d", side_effect=[1.0, 3.0]) as measure:
+            from main import run_user_mode
+
+            run_user_mode(lambda _: next(answers), messages.append)
+
+        self.assertEqual(measure.call_count, 2)
+        self.assertEqual(measure.call_args_list[0].args[0], [[1.0, 0.0, 1.0], [0.0, 1.0, 0.0], [1.0, 0.0, 1.0]])
+        self.assertEqual(measure.call_args_list[0].args[1], [[0.0, 1.0, 0.0], [1.0, 1.0, 1.0], [0.0, 1.0, 0.0]])
+        self.assertIn("평균 처리 시간(10회, A/B MAC 평균): 2.0000 ms", messages)
+        self.assertTrue(any("보너스 1" in message for message in messages))
 
 
 if __name__ == "__main__":

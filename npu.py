@@ -117,14 +117,15 @@ def analyze_data(data: dict) -> AnalysisReport:
     report = AnalysisReport()
     for case_id, raw_case in patterns.items():
         case_id = str(case_id)
-        match = PATTERN_KEY.match(case_id)
-        size_key = f"size_{match.group(1)}" if match else ""
+        match = PATTERN_KEY.fullmatch(case_id)
         if not match:
             report.cases.append(_failed_case(case_id, "패턴 키가 size_N_번호 형식이 아닙니다."))
             continue
-        size = int(match.group(1))
-        case_result = CaseResult(case_id=case_id, size_key=size_key)
+        case_result = CaseResult(case_id=case_id)
         try:
+            size = int(match.group(1))
+            size_key = f"size_{size}"
+            case_result.size_key = size_key
             if not isinstance(raw_case, dict):
                 raise ValueError("패턴 정보가 객체가 아닙니다.")
             matrices = _normalized_filters(filters.get(size_key))
@@ -134,6 +135,8 @@ def analyze_data(data: dict) -> AnalysisReport:
             for label, matrix in matrices.items():
                 validate_matrix(matrix, size)
             scores = {label: mac_2d(pattern, matrix) for label, matrix in matrices.items()}
+            if not all(math.isfinite(score) for score in scores.values()):
+                raise ValueError("MAC 결과가 유한하지 않습니다.")
             predicted = classify_scores(scores["Cross"], scores["X"], "Cross", "X")
             case_result.expected = expected
             case_result.predicted = predicted
@@ -208,7 +211,11 @@ def validate_matrix(matrix: Sequence[Sequence[float]], expected_size: int | None
         for value in row:
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 raise ValueError("행렬 값은 숫자여야 합니다.")
-            if not math.isfinite(value):
+            try:
+                finite = math.isfinite(value)
+            except OverflowError as error:
+                raise ValueError("행렬 값이 너무 커서 계산할 수 없습니다.") from error
+            if not finite:
                 raise ValueError("NaN과 무한대는 사용할 수 없습니다.")
     return size
 
@@ -243,7 +250,11 @@ def mac_2d(pattern: Sequence[Sequence[float]], filter_matrix: Sequence[Sequence[
         raise ValueError("행렬 크기가 서로 다릅니다.")
     if not pattern:
         return 0.0
-    if any(len(row) != len(filter_matrix[index]) for index, row in enumerate(pattern)):
+    pattern_width = len(pattern[0])
+    if any(
+        len(row) != pattern_width or len(filter_matrix[index]) != pattern_width
+        for index, row in enumerate(pattern)
+    ):
         raise ValueError("행렬 크기가 서로 다릅니다.")
 
     score = 0.0

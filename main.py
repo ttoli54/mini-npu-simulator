@@ -7,7 +7,16 @@ import sys
 from pathlib import Path
 from typing import Callable, List
 
-from npu import AnalysisReport, analyze_data, benchmark_sizes, classify_scores, compare_2d_1d, load_data, mac_2d
+from npu import (
+    AnalysisReport,
+    _average_mac_time_2d,
+    analyze_data,
+    benchmark_sizes,
+    classify_scores,
+    compare_2d_1d,
+    load_data,
+    mac_2d,
+)
 
 
 def _print_benchmark() -> None:
@@ -18,11 +27,11 @@ def _print_benchmark() -> None:
         print(f"{result.size}×{result.size:<7} {result.average_ms:>10.4f}       {result.operation_count}")
 
 
-def _print_bonus_comparison() -> None:
+def _print_bonus_comparison(output_fn: Callable[[str], None] = print) -> None:
     result = compare_2d_1d(3)
-    print("\n[보너스 1: 2차원/1차원 MAC 비교]")
-    print(f"같은 점수: {result.score_2d:.6f} / {result.score_1d:.6f}")
-    print(f"2차원 평균: {result.average_2d_ms:.4f} ms, 1차원 평균: {result.average_1d_ms:.4f} ms (각 {result.repeats}회)")
+    output_fn("\n[보너스 1: 2차원/1차원 MAC 비교]")
+    output_fn(f"같은 점수: {result.score_2d:.6f} / {result.score_1d:.6f}")
+    output_fn(f"2차원 평균: {result.average_2d_ms:.4f} ms, 1차원 평균: {result.average_1d_ms:.4f} ms (각 {result.repeats}회)")
 
 
 def read_matrix(size: int, input_fn: Callable[[str], str] = input, output_fn: Callable[[str], None] = print) -> List[List[float]]:
@@ -60,14 +69,19 @@ def run_user_mode(input_fn: Callable[[str], str] = input, output_fn: Callable[[s
 
     score_a = mac_2d(pattern, filter_a)
     score_b = mac_2d(pattern, filter_b)
-    timing = benchmark_sizes((3,), repeats=10)[0]
+    if not math.isfinite(score_a) or not math.isfinite(score_b):
+        output_fn("MAC 계산 오류: 결과가 유한하지 않습니다.")
+        return 1
+    timing_a = _average_mac_time_2d(pattern, filter_a, 10)
+    timing_b = _average_mac_time_2d(pattern, filter_b, 10)
+    average_timing = (timing_a + timing_b) / 2
     verdict = classify_scores(score_a, score_b)
     output_fn("\n[MAC 결과]")
     output_fn(f"A 점수: {score_a:.6f}")
     output_fn(f"B 점수: {score_b:.6f}")
-    output_fn(f"평균 처리 시간(10회): {timing.average_ms:.4f} ms")
+    output_fn(f"평균 처리 시간(10회, A/B MAC 평균): {average_timing:.4f} ms")
     output_fn(f"최종 판정: {verdict}")
-    _print_bonus_comparison()
+    _print_bonus_comparison(output_fn)
     return 0
 
 
