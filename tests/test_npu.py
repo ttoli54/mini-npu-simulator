@@ -1,5 +1,8 @@
 import unittest
 import tempfile
+import subprocess
+import sys
+import os
 from pathlib import Path
 
 from npu import (
@@ -12,7 +15,7 @@ from npu import (
     normalize_label,
     validate_matrix,
 )
-from npu import analyze_data, load_data
+from npu import analyze_data, benchmark_sizes, compare_2d_1d, load_data
 
 
 class MacTests(unittest.TestCase):
@@ -138,6 +141,46 @@ class JsonAnalysisTests(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 load_data(path)
+
+
+class BenchmarkAndCliTests(unittest.TestCase):
+    def test_benchmark_reports_ten_repetitions_and_n_squared_operations(self):
+        results = benchmark_sizes((3, 5), repeats=10)
+
+        self.assertEqual([result.size for result in results], [3, 5])
+        self.assertTrue(all(result.repeats == 10 for result in results))
+        self.assertEqual([result.operation_count for result in results], [9, 25])
+        self.assertTrue(all(result.average_ms >= 0.0 for result in results))
+
+    def test_one_dimensional_bonus_uses_the_same_score_as_two_dimensional_mac(self):
+        comparison = compare_2d_1d(3, repeats=10)
+
+        self.assertEqual(comparison.repeats, 10)
+        self.assertEqual(comparison.score_2d, comparison.score_1d)
+        self.assertGreaterEqual(comparison.average_2d_ms, 0.0)
+        self.assertGreaterEqual(comparison.average_1d_ms, 0.0)
+
+    def test_json_cli_prints_case_routing_benchmark_and_summary(self):
+        environment = os.environ.copy()
+        environment["PYTHONIOENCODING"] = "utf-8"
+        result = subprocess.run(
+            [sys.executable, "main.py"],
+            input="2\n",
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            env=environment,
+            cwd=Path(__file__).resolve().parents[1],
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("size_5_1", result.stdout)
+        self.assertIn("size_5_1 → N=5", result.stdout)
+        self.assertIn("총 테스트: 6개", result.stdout)
+        self.assertIn("통과: 3개", result.stdout)
+        self.assertIn("실패: 3개", result.stdout)
+        self.assertIn("연산 횟수(N²)", result.stdout)
 
 
 if __name__ == "__main__":

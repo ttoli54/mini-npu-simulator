@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Sequence
@@ -44,6 +45,24 @@ class AnalysisReport:
     @property
     def failures(self) -> List[CaseResult]:
         return [case for case in self.cases if case.status == "FAIL"]
+
+
+@dataclass
+class BenchmarkResult:
+    size: int
+    average_ms: float
+    repeats: int
+    operation_count: int
+
+
+@dataclass
+class ComparisonResult:
+    size: int
+    repeats: int
+    score_2d: float
+    score_1d: float
+    average_2d_ms: float
+    average_1d_ms: float
 
 
 def normalize_label(value: object) -> str:
@@ -127,6 +146,53 @@ def analyze_data(data: dict) -> AnalysisReport:
             case_result.reason = str(error)
         report.cases.append(case_result)
     return report
+
+
+def _average_mac_time_2d(pattern: Sequence[Sequence[float]], filter_matrix: Sequence[Sequence[float]], repeats: int) -> float:
+    start = time.perf_counter()
+    for _ in range(repeats):
+        mac_2d(pattern, filter_matrix)
+    return (time.perf_counter() - start) * 1000 / repeats
+
+
+def _average_mac_time_1d(pattern: Sequence[float], filter_values: Sequence[float], repeats: int) -> float:
+    start = time.perf_counter()
+    for _ in range(repeats):
+        mac_1d(pattern, filter_values)
+    return (time.perf_counter() - start) * 1000 / repeats
+
+
+def _validate_repeats(repeats: int) -> None:
+    if not isinstance(repeats, int) or repeats < 1:
+        raise ValueError("반복 횟수는 1 이상의 정수여야 합니다.")
+
+
+def benchmark_sizes(sizes: Sequence[int] = (3, 5, 13, 25), repeats: int = 10) -> List[BenchmarkResult]:
+    """Measure generated Cross MAC calls for each requested size."""
+    _validate_repeats(repeats)
+    results = []
+    for size in sizes:
+        pattern = generate_cross(size)
+        average_ms = _average_mac_time_2d(pattern, pattern, repeats)
+        results.append(BenchmarkResult(size, average_ms, repeats, size * size))
+    return results
+
+
+def compare_2d_1d(size: int, repeats: int = 10) -> ComparisonResult:
+    """Compare 2D and flattened MAC using identical generated data."""
+    _validate_repeats(repeats)
+    pattern = generate_cross(size)
+    filter_matrix = generate_x(size)
+    pattern_flat = [value for row in pattern for value in row]
+    filter_flat = [value for row in filter_matrix for value in row]
+    return ComparisonResult(
+        size=size,
+        repeats=repeats,
+        score_2d=mac_2d(pattern, filter_matrix),
+        score_1d=mac_1d(pattern_flat, filter_flat),
+        average_2d_ms=_average_mac_time_2d(pattern, filter_matrix, repeats),
+        average_1d_ms=_average_mac_time_1d(pattern_flat, filter_flat, repeats),
+    )
 
 
 def validate_matrix(matrix: Sequence[Sequence[float]], expected_size: int | None = None) -> int:
