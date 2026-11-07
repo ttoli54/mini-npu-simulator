@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
+from typing import Callable, List
 
-from npu import AnalysisReport, analyze_data, benchmark_sizes, compare_2d_1d, load_data
+from npu import AnalysisReport, analyze_data, benchmark_sizes, classify_scores, compare_2d_1d, load_data, mac_2d
 
 
 def _print_benchmark() -> None:
@@ -21,6 +23,52 @@ def _print_bonus_comparison() -> None:
     print("\n[보너스 1: 2차원/1차원 MAC 비교]")
     print(f"같은 점수: {result.score_2d:.6f} / {result.score_1d:.6f}")
     print(f"2차원 평균: {result.average_2d_ms:.4f} ms, 1차원 평균: {result.average_1d_ms:.4f} ms (각 {result.repeats}회)")
+
+
+def read_matrix(size: int, input_fn: Callable[[str], str] = input, output_fn: Callable[[str], None] = print) -> List[List[float]]:
+    """Read exactly `size` rows of finite numbers from the console."""
+    matrix = []
+    for row_number in range(1, size + 1):
+        while True:
+            raw = input_fn(f"{row_number}행: ")
+            parts = raw.strip().split()
+            if len(parts) != size:
+                output_fn(f"입력 형식 오류: 각 줄에 {size}개의 숫자를 공백으로 구분해 입력하세요.")
+                continue
+            try:
+                row = [float(value) for value in parts]
+            except ValueError:
+                output_fn("입력 형식 오류: 숫자만 입력하세요.")
+                continue
+            if not all(math.isfinite(value) for value in row):
+                output_fn("입력 형식 오류: NaN과 무한대는 입력할 수 없습니다.")
+                continue
+            matrix.append(row)
+            break
+    return matrix
+
+
+def run_user_mode(input_fn: Callable[[str], str] = input, output_fn: Callable[[str], None] = print) -> int:
+    output_fn("\n[필터 입력]")
+    output_fn("필터 A (3줄 입력, 공백 구분)")
+    filter_a = read_matrix(3, input_fn, output_fn)
+    output_fn("필터 B (3줄 입력, 공백 구분)")
+    filter_b = read_matrix(3, input_fn, output_fn)
+    output_fn("필터 2개 입력 완료")
+    output_fn("\n[패턴 입력]")
+    pattern = read_matrix(3, input_fn, output_fn)
+
+    score_a = mac_2d(pattern, filter_a)
+    score_b = mac_2d(pattern, filter_b)
+    timing = benchmark_sizes((3,), repeats=10)[0]
+    verdict = classify_scores(score_a, score_b)
+    output_fn("\n[MAC 결과]")
+    output_fn(f"A 점수: {score_a:.6f}")
+    output_fn(f"B 점수: {score_b:.6f}")
+    output_fn(f"평균 처리 시간(10회): {timing.average_ms:.4f} ms")
+    output_fn(f"최종 판정: {verdict}")
+    _print_bonus_comparison()
+    return 0
 
 
 def _print_report(report: AnalysisReport) -> None:
@@ -64,8 +112,7 @@ def main() -> int:
         data_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("data.json")
         return run_json_mode(data_path)
     if choice == "1":
-        print("사용자 입력 모드는 다음 단계에서 구현합니다.")
-        return 0
+        return run_user_mode()
     print("1 또는 2를 선택해주세요.")
     return 1
 

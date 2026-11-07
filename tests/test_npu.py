@@ -183,5 +183,66 @@ class BenchmarkAndCliTests(unittest.TestCase):
         self.assertIn("연산 횟수(N²)", result.stdout)
 
 
+class UserModeTests(unittest.TestCase):
+    def test_read_matrix_retries_bad_length_non_numeric_and_non_finite_rows(self):
+        answers = iter(["0 1", "0 a 1", "0 nan 1", "0 1 0", "1 1 1", "0 1 0"])
+        messages = []
+
+        from main import read_matrix
+
+        matrix = read_matrix(3, lambda _: next(answers), messages.append)
+
+        self.assertEqual(matrix, [[0.0, 1.0, 0.0], [1.0, 1.0, 1.0], [0.0, 1.0, 0.0]])
+        self.assertEqual(len(messages), 3)
+
+    def test_user_mode_prints_one_result_block_with_scores_timing_and_verdict(self):
+        input_data = "\n".join(
+            [
+                "1",
+                "0 1 0",
+                "1 1 1",
+                "0 1 0",
+                "1 0 1",
+                "0 1 0",
+                "1 0 1",
+                "1 0 1",
+                "0 1 0",
+                "1 0 1",
+            ]
+        ) + "\n"
+        environment = os.environ.copy()
+        environment["PYTHONIOENCODING"] = "utf-8"
+        result = subprocess.run(
+            [sys.executable, "main.py"],
+            input=input_data,
+            text=True,
+            encoding="utf-8",
+            capture_output=True,
+            env=environment,
+            cwd=Path(__file__).resolve().parents[1],
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("필터 2개 입력 완료", result.stdout)
+        self.assertIn("A 점수: 1.000000", result.stdout)
+        self.assertIn("B 점수: 5.000000", result.stdout)
+        self.assertIn("평균 처리 시간", result.stdout)
+        self.assertIn("최종 판정: B", result.stdout)
+        self.assertIn("보너스 1", result.stdout)
+
+    def test_invalid_menu_choice_returns_nonzero(self):
+        result = subprocess.run(
+            [sys.executable, "main.py"],
+            input="9\n",
+            text=True,
+            capture_output=True,
+            cwd=Path(__file__).resolve().parents[1],
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
