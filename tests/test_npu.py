@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from pathlib import Path
 
 from npu import (
     EPSILON,
@@ -10,6 +12,7 @@ from npu import (
     normalize_label,
     validate_matrix,
 )
+from npu import analyze_data, load_data
 
 
 class MacTests(unittest.TestCase):
@@ -74,6 +77,67 @@ class ValidationAndPatternTests(unittest.TestCase):
                 generator(2)
             with self.assertRaises(ValueError):
                 generator(0)
+
+
+class JsonAnalysisTests(unittest.TestCase):
+    def test_original_data_has_six_passing_cases_after_label_normalization(self):
+        data = load_data(Path(__file__).resolve().parents[1] / "data.json")
+
+        report = analyze_data(data)
+
+        self.assertEqual(report.total, 6)
+        self.assertEqual(report.passed, 3)
+        self.assertEqual(report.failed, 3)
+        self.assertEqual(
+            [failure.case_id for failure in report.failures],
+            ["size_5_1", "size_13_2", "size_25_1"],
+        )
+        self.assertEqual(report.cases[0].size_key, "size_5")
+        self.assertEqual(report.cases[0].case_id, "size_5_1")
+
+    def test_case_errors_are_recorded_without_stopping_other_cases(self):
+        data = {
+            "filters": {
+                "size_3": {
+                    "cross": [[1.0, 0.0, 0.0]] * 3,
+                    "x": [[0.0, 1.0, 0.0]] * 3,
+                }
+            },
+            "patterns": {
+                "size_3_1": {
+                    "input": [[1.0, 0.0, 0.0]] * 3,
+                    "expected": "+",
+                },
+                "bad-key": {
+                    "input": [[1.0, 0.0, 0.0]] * 3,
+                    "expected": "x",
+                },
+                "size_3_3": {
+                    "input": [[1.0, 0.0], [0.0, 1.0]],
+                    "expected": "+",
+                },
+                "size_5_1": {
+                    "input": [[1.0]],
+                    "expected": "circle",
+                },
+            },
+        }
+
+        report = analyze_data(data)
+
+        self.assertEqual(report.total, 4)
+        self.assertEqual(report.passed, 1)
+        self.assertEqual(report.failed, 3)
+        self.assertEqual([failure.case_id for failure in report.failures], ["bad-key", "size_3_3", "size_5_1"])
+        self.assertTrue(all(failure.reason for failure in report.failures))
+
+    def test_load_data_rejects_invalid_json_file(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]) as directory:
+            path = Path(directory) / "bad.json"
+            path.write_text("not json", encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                load_data(path)
 
 
 if __name__ == "__main__":
