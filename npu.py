@@ -5,10 +5,11 @@ from __future__ import annotations
 import math
 import json
 import re
+import tracemalloc
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Sequence
+from typing import Callable, Dict, List, Sequence
 
 
 EPSILON = 1e-9
@@ -63,6 +64,21 @@ class ComparisonResult:
     score_1d: float
     average_2d_ms: float
     average_1d_ms: float
+
+
+@dataclass
+class ProfileResult:
+    """Reproducible timing and memory measurements for one matrix size."""
+
+    size: int
+    repeats: int
+    score_2d: float
+    score_1d: float
+    average_2d_ms: float
+    average_1d_ms: float
+    peak_2d_kib: float
+    peak_1d_kib: float
+    operation_count: int
 
 
 def normalize_label(value: object) -> str:
@@ -195,6 +211,60 @@ def compare_2d_1d(size: int, repeats: int = 10) -> ComparisonResult:
         score_1d=mac_1d(pattern_flat, filter_flat),
         average_2d_ms=_average_mac_time_2d(pattern, filter_matrix, repeats),
         average_1d_ms=_average_mac_time_1d(pattern_flat, filter_flat, repeats),
+    )
+
+
+def _peak_memory(builder: Callable[[], object]) -> float:
+    """Return peak KiB allocated while building one matrix representation."""
+    tracemalloc.start()
+    try:
+        builder()
+        _, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
+    return peak / 1024
+
+
+def _generate_cross_flat(size: int) -> list[float]:
+    _validate_generated_size(size)
+    center = size // 2
+    return [
+        1.0 if row == center or column == center else 0.0
+        for row in range(size)
+        for column in range(size)
+    ]
+
+
+def _generate_x_flat(size: int) -> list[float]:
+    _validate_generated_size(size)
+    return [
+        1.0 if column == row or column == size - row - 1 else 0.0
+        for row in range(size)
+        for column in range(size)
+    ]
+
+
+def profile_size(size: int, repeats: int = 10) -> ProfileResult:
+    """Measure 2D/1D execution time and representation peak memory."""
+    _validate_repeats(repeats)
+    pattern_2d = generate_cross(size)
+    filter_2d = generate_x(size)
+    pattern_1d = _generate_cross_flat(size)
+    filter_1d = _generate_x_flat(size)
+    score_2d = mac_2d(pattern_2d, filter_2d)
+    score_1d = mac_1d(pattern_1d, filter_1d)
+    if score_2d != score_1d:
+        raise ValueError("프로파일링 기준 결과가 일치하지 않습니다.")
+    return ProfileResult(
+        size=size,
+        repeats=repeats,
+        score_2d=score_2d,
+        score_1d=score_1d,
+        average_2d_ms=_average_mac_time_2d(pattern_2d, filter_2d, repeats),
+        average_1d_ms=_average_mac_time_1d(pattern_1d, filter_1d, repeats),
+        peak_2d_kib=_peak_memory(lambda: (generate_cross(size), generate_x(size))),
+        peak_1d_kib=_peak_memory(lambda: (_generate_cross_flat(size), _generate_x_flat(size))),
+        operation_count=size * size,
     )
 
 

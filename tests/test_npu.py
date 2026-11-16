@@ -16,7 +16,7 @@ from npu import (
     normalize_label,
     validate_matrix,
 )
-from npu import analyze_data, benchmark_sizes, compare_2d_1d, load_data
+from npu import analyze_data, benchmark_sizes, compare_2d_1d, load_data, profile_size
 
 
 class MacTests(unittest.TestCase):
@@ -222,6 +222,17 @@ class BenchmarkAndCliTests(unittest.TestCase):
         self.assertEqual(comparison.score_2d, comparison.score_1d)
         self.assertGreaterEqual(comparison.average_2d_ms, 0.0)
         self.assertGreaterEqual(comparison.average_1d_ms, 0.0)
+
+    def test_profile_records_memory_and_matches_scores_for_larger_input(self):
+        result = profile_size(101, repeats=2)
+
+        self.assertEqual(result.size, 101)
+        self.assertEqual(result.operation_count, 101 * 101)
+        self.assertEqual(result.score_2d, result.score_1d)
+        self.assertGreater(result.peak_2d_kib, 0.0)
+        self.assertGreater(result.peak_1d_kib, 0.0)
+        self.assertGreaterEqual(result.average_2d_ms, 0.0)
+        self.assertGreaterEqual(result.average_1d_ms, 0.0)
 
     def test_json_cli_prints_case_routing_benchmark_and_summary(self):
         environment = os.environ.copy()

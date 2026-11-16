@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <rect width="1200" height="820" fill="#111827"/>
+  <rect x="28" y="24" width="1144" height="772" rx="12" fill="#0b1220" stroke="#334155" stroke-width="2"/>
+  <circle cx="58" cy="52" r="8" fill="#ef4444"/><circle cx="84" cy="52" r="8" fill="#f59e0b"/><circle cx="110" cy="52" r="8" fill="#22c55e"/>
+  <text x="140" y="58" fill="#cbd5e1" font-family="Consolas, monospace" font-size="20">Mini NPU Simulator - JSON analysis evidence</text>
+  <g fill="#e5e7eb" font-family="Consolas, 'Malgun Gothic', monospace" font-size="18">
+    <text x="52" y="105" fill="#93c5fd">PS&gt; "2" | python main.py</text>
+    <text x="52" y="145">[패턴 분석]</text>
+    <text x="52" y="181">- size_5_1  Cross=0.900000  X=0.900000  UNDECIDED  FAIL</text>
+    <text x="52" y="215">- size_5_2  Cross=8.900000  X=0.100000  Cross      PASS</text>
+    <text x="52" y="249">- size_13_1 Cross=0.300000  X=14.700000 X         PASS</text>
+    <text x="52" y="283">- size_13_2 Cross=7.500000  X=7.500000  UNDECIDED  FAIL</text>
+    <text x="52" y="317">- size_25_1 Cross=4.900000  X=4.900000  UNDECIDED  FAIL</text>
+    <text x="52" y="351">- size_25_2 Cross=52.900000 X=0.100000  Cross      PASS</text>
+    <text x="52" y="405">[보너스 1: 2차원/1차원 MAC 비교]</text>
+    <text x="52" y="441">같은 점수: 1.000000 / 1.000000</text>
+    <text x="52" y="475">2차원 평균: 0.0018 ms, 1차원 평균: 0.0015 ms (각 10회)</text>
+    <text x="52" y="535" fill="#86efac">[결과 요약]</text>
+    <text x="52" y="571" fill="#86efac">총 테스트: 6개</text>
+    <text x="52" y="605" fill="#86efac">통과: 3개</text>
+    <text x="52" y="639" fill="#fca5a5">실패: 3개</text>
+    <text x="52" y="695" fill="#fbbf24">UNDECIDED 원인을 보존하고 케이스별 FAIL 사유를 출력</text>
+    <text x="52" y="741" fill="#94a3b8">실행 증거: data.json 원본을 수정하지 않고 전체 케이스를 끝까지 처리</text>
+  </g>
+</svg>

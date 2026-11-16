@@ -9,7 +9,7 @@
 - 제공된 `data.json`은 원본 값을 수정하지 않고 프로젝트 루트에 둡니다.
 
 ```powershell
-cd "C:\Users\수훈\OneDrive\문서\ChatGPT\코디세이 2\mini-npu-simulator"
+cd mini-npu-simulator
 python main.py
 ```
 
@@ -24,6 +24,32 @@ python main.py C:\path\to\data.json
 ```powershell
 python -m unittest -v
 ```
+
+## 피드백 반영: 실제 성능·메모리 측정
+
+문서상의 최적화 제안을 실제 수치로 검증할 수 있도록 `profile.py`를 추가했습니다. `time.perf_counter()`로 MAC 반복 구간을 측정하고, `tracemalloc`으로 2D 리스트와 평탄화한 1D 리스트를 생성할 때의 peak 메모리를 측정합니다. 2D와 1D의 점수가 다르면 프로파일링 자체가 실패하므로 결과 일치도 함께 검증합니다.
+
+```powershell
+python profile.py --sizes 3,5,13,25,101,251 --repeats 10 --large-size 1001 --large-repeats 1 --output docs/benchmark-report.md
+```
+
+패턴 생성기는 기존 요구사항에 따라 홀수 크기를 사용하므로 대규모 검증은 1001×1001로 실행했습니다. 작은 입력은 10회, 대규모 입력은 1회로 측정하며, 실행 환경에 따라 시간과 메모리 수치가 달라질 수 있습니다. 실제 실행 결과는 [benchmark-report.md](docs/benchmark-report.md)에 기록했습니다.
+
+### 실행 화면 증거
+
+평가자가 결과를 바로 확인할 수 있도록 JSON 일괄 분석과 대규모 프로파일링 실행 화면을 함께 첨부했습니다.
+
+![JSON 일괄 분석 실행 화면](docs/screenshots/json-analysis.svg)
+
+![성능·메모리 프로파일링 실행 화면](docs/screenshots/profile.svg)
+
+화면에 표시된 핵심 검증 내용은 다음과 같습니다.
+
+- 원본 JSON 6개 케이스를 모두 처리하고 PASS 3개, FAIL 3개를 집계합니다.
+- `UNDECIDED`가 발생한 세 케이스의 원인을 점수 동률로 구분합니다.
+- 3×3부터 1001×1001까지 입력 크기를 확장해 실행합니다.
+- 모든 프로파일링 행에서 2D/1D 점수가 `1.000000`으로 일치합니다.
+- 실행 시간, 연산 수 N², 2D/1D peak 메모리를 실제 측정합니다.
 
 ## 구현 요약
 

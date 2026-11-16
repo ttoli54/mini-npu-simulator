@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <rect width="1200" height="820" fill="#111827"/>
+  <rect x="28" y="24" width="1144" height="772" rx="12" fill="#0b1220" stroke="#334155" stroke-width="2"/>
+  <circle cx="58" cy="52" r="8" fill="#ef4444"/><circle cx="84" cy="52" r="8" fill="#f59e0b"/><circle cx="110" cy="52" r="8" fill="#22c55e"/>
+  <text x="140" y="58" fill="#cbd5e1" font-family="Consolas, monospace" font-size="20">Mini NPU Simulator - profiling evidence</text>
+  <g fill="#e5e7eb" font-family="Consolas, 'Malgun Gothic', monospace" font-size="16">
+    <text x="52" y="100" fill="#93c5fd">PS&gt; python profile.py --sizes 3,5,13,25,101,251 --large-size 1001</text>
+    <text x="52" y="140">N    반복    연산 수(N²)   2D ms     1D ms     2D peak KiB  1D peak KiB  점수</text>
+    <text x="52" y="176">3      10          9       0.0021    0.0013        0.41        0.25     1.000000</text>
+    <text x="52" y="210">5      10         25       0.0030    0.0021        1.19        0.50     1.000000</text>
+    <text x="52" y="244">13     10        169       0.0114    0.0085        5.03        2.69     1.000000</text>
+    <text x="52" y="278">25     10        625       0.0367    0.0298       15.62       10.50     1.000000</text>
+    <text x="52" y="312">101    10      10201       0.8548    1.1408      183.28      166.25     1.000000</text>
+    <text x="52" y="346">251    10      63001       5.2563    4.0146     1082.81     1098.50     1.000000</text>
+    <text x="52" y="380">1001    1    1002001      60.5515   64.4907    17331.47    16501.31     1.000000</text>
+    <text x="52" y="440" fill="#86efac">2D/1D 점수 일치 검증: PASS</text>
+    <text x="52" y="476" fill="#86efac">대규모 입력: 1001×1001 / 연산 수: 1,002,001</text>
+    <text x="52" y="512" fill="#86efac">실행 시간: perf_counter() / 메모리: tracemalloc peak</text>
+    <text x="52" y="572" fill="#fbbf24">프로파일링 결과 저장: docs/benchmark-report.md</text>
+    <text x="52" y="632" fill="#94a3b8">모든 수치는 동일 환경에서 최적화 전후 비교를 위한 재현 가능한 측정값</text>
+    <text x="52" y="688" fill="#94a3b8">3×3·5×5·13×13·25×25 기존 입력 + 101×101·251×251·1001×1001 확장 입력</text>
+  </g>
+</svg>
