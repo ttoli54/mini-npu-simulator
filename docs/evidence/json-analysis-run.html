@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>Mini NPU Simulator - JSON analysis</title>
+<style>
+body { margin: 0; background: #111827; color: #e5e7eb; font-family: Consolas, 'Malgun Gothic', monospace; }
+main { margin: 32px; background: #0b1220; border: 2px solid #334155; border-radius: 14px; padding: 28px; }
+h1 { color: #cbd5e1; font-size: 24px; margin: 0 0 22px; }
+.command { color: #93c5fd; margin-bottom: 18px; }
+pre { white-space: pre; font-size: 17px; line-height: 1.55; margin: 0; }
+</style></head><body><main>
+<h1>Mini NPU Simulator - JSON analysis</h1>
+<div class="command">PS&gt; (input: 2) | py -3 main.py</div>
+<pre>=== Mini NPU Simulator ===
+
+[모드 선택]
+1. 사용자 입력 (3x3)
+2. data.json 분석
+선택:
+[패턴 분석]
+- size_5_1 → N=5 → size_5의 Cross/X 필터 사용
+  Cross 점수: 0.900000
+  X 점수: 0.900000
+  판정: UNDECIDED | expected: X | FAIL (판정 UNDECIDED가 expected X와 다릅니다.)
+- size_5_2 → N=5 → size_5의 Cross/X 필터 사용
+  Cross 점수: 8.900000
+  X 점수: 0.100000
+  판정: Cross | expected: Cross | PASS (예상 라벨과 일치합니다.)
+- size_13_1 → N=13 → size_13의 Cross/X 필터 사용
+  Cross 점수: 0.300000
+  X 점수: 14.700000
+  판정: X | expected: X | PASS (예상 라벨과 일치합니다.)
+- size_13_2 → N=13 → size_13의 Cross/X 필터 사용
+  Cross 점수: 7.500000
+  X 점수: 7.500000
+  판정: UNDECIDED | expected: Cross | FAIL (판정 UNDECIDED가 expected Cross와 다릅니다.)
+- size_25_1 → N=25 → size_25의 Cross/X 필터 사용
+  Cross 점수: 4.900000
+  X 점수: 4.900000
+  판정: UNDECIDED | expected: X | FAIL (판정 UNDECIDED가 expected X와 다릅니다.)
+- size_25_2 → N=25 → size_25의 Cross/X 필터 사용
+  Cross 점수: 52.900000
+  X 점수: 0.100000
+  판정: Cross | expected: Cross | PASS (예상 라벨과 일치합니다.)
+
+[성능 분석: 평균/10회]
+크기(N×N)   평균 시간(ms)   연산 횟수(N²)
+------------------------------------------
+3×3           0.0019       9
+5×5           0.0029       25
+13×13          0.0115       169
+25×25          0.0368       625
+
+[보너스 1: 2차원/1차원 MAC 비교]
+같은 점수: 1.000000 / 1.000000
+2차원 평균: 0.0017 ms, 1차원 평균: 0.0013 ms (각 10회)
+
+[결과 요약]
+총 테스트: 6개
+통과: 3개
+실패: 3개
+실패 케이스:
+- size_5_1: 판정 UNDECIDED가 expected X와 다릅니다.
+- size_13_2: 판정 UNDECIDED가 expected Cross와 다릅니다.
+- size_25_1: 판정 UNDECIDED가 expected X와 다릅니다.
+[exit code: 0]</pre>
+</main></body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>Mini NPU Simulator - unit tests</title>
+<style>
+body { margin: 0; background: #111827; color: #e5e7eb; font-family: Consolas, 'Malgun Gothic', monospace; }
+main { margin: 32px; background: #0b1220; border: 2px solid #334155; border-radius: 14px; padding: 28px; }
+h1 { color: #cbd5e1; font-size: 24px; margin: 0 0 22px; }
+.command { color: #93c5fd; margin-bottom: 18px; }
+pre { white-space: pre; font-size: 17px; line-height: 1.55; margin: 0; }
+</style></head><body><main>
+<h1>Mini NPU Simulator - unit tests</h1>
+<div class="command">PS&gt; py -3 -m unittest -v</div>
+<pre>
+[stderr]
+test_benchmark_reports_ten_repetitions_and_n_squared_operations (tests.test_npu.BenchmarkAndCliTests.test_benchmark_reports_ten_repetitions_and_n_squared_operations) ... ok
+test_json_cli_prints_case_routing_benchmark_and_summary (tests.test_npu.BenchmarkAndCliTests.test_json_cli_prints_case_routing_benchmark_and_summary) ... ok
+test_one_dimensional_bonus_uses_the_same_score_as_two_dimensional_mac (tests.test_npu.BenchmarkAndCliTests.test_one_dimensional_bonus_uses_the_same_score_as_two_dimensional_mac) ... ok
+test_profile_records_memory_and_matches_scores_for_larger_input (tests.test_npu.BenchmarkAndCliTests.test_profile_records_memory_and_matches_scores_for_larger_input) ... ok
+test_case_errors_are_recorded_without_stopping_other_cases (tests.test_npu.JsonAnalysisTests.test_case_errors_are_recorded_without_stopping_other_cases) ... ok
+test_huge_json_integer_is_a_case_failure_and_later_case_still_runs (tests.test_npu.JsonAnalysisTests.test_huge_json_integer_is_a_case_failure_and_later_case_still_runs) ... ok
+test_load_data_rejects_invalid_json_file (tests.test_npu.JsonAnalysisTests.test_load_data_rejects_invalid_json_file) ... ok
+test_malformed_pattern_key_is_a_case_failure_and_later_case_still_runs (tests.test_npu.JsonAnalysisTests.test_malformed_pattern_key_is_a_case_failure_and_later_case_still_runs) ... ok
+test_non_finite_score_is_a_case_failure_and_later_case_still_runs (tests.test_npu.JsonAnalysisTests.test_non_finite_score_is_a_case_failure_and_later_case_still_runs) ... ok
+test_original_data_has_six_passing_cases_after_label_normalization (tests.test_npu.JsonAnalysisTests.test_original_data_has_six_passing_cases_after_label_normalization) ... ok
+test_higher_score_wins_and_tiny_difference_is_undecided (tests.test_npu.MacTests.test_higher_score_wins_and_tiny_difference_is_undecided) ... ok
+test_mac_1d_matches_the_two_dimensional_result (tests.test_npu.MacTests.test_mac_1d_matches_the_two_dimensional_result) ... ok
+test_mac_2d_multiplies_matching_positions_and_accumulates (tests.test_npu.MacTests.test_mac_2d_multiplies_matching_positions_and_accumulates) ... ok
+test_mac_rejects_different_matrix_sizes (tests.test_npu.MacTests.test_mac_rejects_different_matrix_sizes) ... ok
+test_mac_rejects_ragged_matrices (tests.test_npu.MacTests.test_mac_rejects_ragged_matrices) ... ok
+test_invalid_menu_choice_returns_nonzero (tests.test_npu.UserModeTests.test_invalid_menu_choice_returns_nonzero) ... ok
+test_read_matrix_retries_bad_length_non_numeric_and_non_finite_rows (tests.test_npu.UserModeTests.test_read_matrix_retries_bad_length_non_numeric_and_non_finite_rows) ... ok
+test_user_mode_prints_one_result_block_with_scores_timing_and_verdict (tests.test_npu.UserModeTests.test_user_mode_prints_one_result_block_with_scores_timing_and_verdict) ... ok
+test_user_mode_times_entered_filters_and_routes_bonus_output_to_callback (tests.test_npu.UserModeTests.test_user_mode_times_entered_filters_and_routes_bonus_output_to_callback) ... ok
+test_generators_create_expected_three_by_three_shapes (tests.test_npu.ValidationAndPatternTests.test_generators_create_expected_three_by_three_shapes) ... ok
+test_generators_reject_even_or_too_small_sizes (tests.test_npu.ValidationAndPatternTests.test_generators_reject_even_or_too_small_sizes) ... ok
+test_normalize_label_rejects_unknown_label (tests.test_npu.ValidationAndPatternTests.test_normalize_label_rejects_unknown_label) ... ok
+test_normalize_label_supports_cross_aliases (tests.test_npu.ValidationAndPatternTests.test_normalize_label_supports_cross_aliases) ... ok
+test_validate_matrix_rejects_non_square_and_non_finite_values (tests.test_npu.ValidationAndPatternTests.test_validate_matrix_rejects_non_square_and_non_finite_values) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.366s
+
+OK
+[exit code: 0]</pre>
+</main></body></html>

@@ -37,11 +37,19 @@ python profile.py --sizes 3,5,13,25,101,251 --repeats 10 --large-size 1001 --lar
 
 ### 실행 화면 증거
 
-평가자가 결과를 바로 확인할 수 있도록 JSON 일괄 분석과 대규모 프로파일링 실행 화면을 함께 첨부했습니다.
+평가자가 결과를 바로 확인할 수 있도록 실제 명령을 다시 실행한 뒤 생성한 PNG 화면 증거를 첨부했습니다. 실행 출력과 HTML 증거 페이지는 `capture_evidence.py`로 재생성할 수 있습니다.
 
-![JSON 일괄 분석 실행 화면](docs/screenshots/json-analysis.svg)
+```powershell
+python capture_evidence.py
+```
 
-![성능·메모리 프로파일링 실행 화면](docs/screenshots/profile.svg)
+![3×3 사용자 입력 실행 화면](docs/screenshots/user-mode-run.png)
+
+![JSON 일괄 분석 실행 화면](docs/screenshots/json-analysis-run.png)
+
+![성능·메모리 프로파일링 실행 화면](docs/screenshots/profile-run.png)
+
+![단위 테스트 실행 화면](docs/screenshots/unittest-run.png)
 
 화면에 표시된 핵심 검증 내용은 다음과 같습니다.
 
